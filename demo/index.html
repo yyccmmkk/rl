@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>劈腿关系图</title>
+	<style type="text/css">
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    #container {
+      width: 1200px;
+      height: 1800px;
+      padding: 70px 50px;
+      margin: 50px auto;
+      border: 10px solid green;
+      position: relative;
+      display: flex;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      align-content: flex-start;
+    }
+
+    .row {
+      width: 100%;
+      display: flex;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .node {
+      width: 145px;
+      height: 75px;
+      border-radius: 5px;
+      background-color: darkseagreen;
+      margin-right: 35px;
+      margin-left: 35px;
+      margin-bottom: 70px;
+      text-align: center;
+      line-height: 75px;
+    }
+
+    .c {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    canvas {
+      width: 1300px;
+      height: 1940px;
+      position: absolute;
+      pointer-events: none;
+      left: 0;
+      top: 0;
+      background: rgba(225, 255, 0, 0.1)
+    }
+	</style>
+</head>
+<body>
+
+<div id="container">
+	<canvas id="cc" width="1300" height="1940"></canvas>
+</div>
+<script type="module">
+	import {
+		toRight as tr,
+		toRightFar as trf,
+		toLeft as tl,
+		toLeftFar as tlf,
+		toTop as tt,
+		toTopFar as ttf,
+		toTopLeft as ttl,
+		toTopRight as ttr,
+		toDown as td,
+		toDownFar as tdf,
+		toDownLeft as tdl,
+		toDownRight as tdr,
+	} from "./drawLine.js";
+
+	import {data as data2} from './data.js';
+
+	const canvas = document.querySelector('#cc');
+	const cbcr = canvas.getBoundingClientRect();
+	const ctx = canvas.getContext('2d');
+	let count = 1;
+
+	let height = 115;
+	let itemHeight = 115;
+	let itemWidth = 145;
+	let wGap = 70;
+	let hGap = 70;
+
+
+	function toDownLeft(p, s, pid, sid) {
+		tdl(ctx, cbcr, pid, sid, p, s);
+	}
+
+	function toDownRight(p, s, pid, sid) { //rl
+		tdr(ctx, cbcr, pid, sid, p, s);
+	}
+
+	function toTopRight(p, s, pid, sid) {
+		ttr(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toTopLeft(p, s, pid, sid) {
+		ttl(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toTop(p, s, pid, sid) {
+		tt(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toTopFar(p, s, pid, sid) {
+		ttf(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toLeft(p, s, pid, sid) {
+		tl(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toLeftFar(p, s, pid, sid) {
+		tlf(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toRight(p, s, pid, sid) {
+		tr(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toRightFar(p, s, pid, sid) {
+		trf(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toDown(p, s, pid, sid) {
+		td(ctx, cbcr, pid, sid, p, s)
+	}
+
+	function toDownFar(p, s, pid, sid) {
+		tdf(ctx, cbcr, pid, sid, p, s)
+	}
+
+	const map = {};
+
+	function createNode(list, node = document.createDocumentFragment()) {
+
+		for (let v of list) {
+
+			if (!map[v.id]) {
+				map[v.id] = true;
+				v.eleId = 'z_' + count++;
+				let ele = document.createElement('div');
+				ele.className = 'node';
+				ele.innerHTML = v.name || v.id;
+				ele.id = v.id;
+				node.appendChild(ele);
+			}
+
+			if (v.children && v.children.length) {
+				createNode(v.children, node)
+			}
+		}
+
+		return node
+	}
+
+
+	function drawLine(list, bcrP, pid) {
+
+		for (let v of list) {
+			let temp = document.querySelector('#' + v.id);
+			let bcrS = temp.getBoundingClientRect();
+			if (bcrP) {
+				let xd = bcrP.left - bcrS.left;
+				let yd = bcrP.top - bcrS.top;
+				if (yd === 0) {
+					if (xd > 0) {
+						xd > itemWidth + wGap ? toLeftFar(bcrP, bcrS, pid, v.id) : toLeft(bcrP, bcrS, pid, v.id);
+					} else if (xd < 0) {
+						Math.abs(xd) > itemWidth + wGap ? toRightFar(bcrP, bcrS, pid, v.id) : toRight(bcrP, bcrS, pid, v.id);
+					}
+				}
+				if (yd > 0) { //up
+					if (xd === 0) {
+						yd > itemHeight + hGap ? toTopFar(bcrP, bcrS, pid, v.id) : toTop(bcrP, bcrS, pid, v.id);
+					} else if (xd > 0) {
+						toTopLeft(bcrP, bcrS, pid, v.id);
+					} else {
+						toTopRight(bcrP, bcrS, pid, v.id);
+					}
+				}
+				if (yd < 0) { //down
+					if (xd === 0) {
+						Math.abs(yd) > itemHeight + hGap ? toDownFar(bcrP, bcrS, pid, v.id) : toDown(bcrP, bcrS, pid, v.id);
+					} else if (xd < 0) {
+						toDownRight(bcrP, bcrS, pid, v.id);
+					} else {
+						toDownLeft(bcrP, bcrS, pid, v.id);
+					}
+				}
+			}
+
+			if (v.children && v.children.length) {
+				drawLine(v.children, bcrS, v.id);
+			}
+		}
+	}
+
+
+	function adaptor(list) {
+		const map = {};
+		const pKey = 'pid';
+		const key = 'id';
+		for (let v of list) {
+			const p = v[pKey];
+			if (!p) {
+				map[v[key]] = [];
+				continue
+			}
+			let sKey = v[key];
+			if (map[p]) {
+				map[p].push({id: sKey});
+			} else {
+				map[p] = [{id: sKey}];
+			}
+		}
+		return map
+	}
+
+	let temp = adaptor(data2);
+
+	let deleteList = [];
+	for (let v of Object.keys(temp)) {
+		for (let vv of Object.values(temp)) {
+			let index = vv.findIndex((vvv) => vvv.id === v)
+			if (index !== -1) {
+				if (!deleteList.includes(v)) {
+					vv[index].children = temp[v];
+					deleteList.push(v);
+				}
+			}
+		}
+	}
+	deleteList = [...new Set(deleteList)];
+
+	for (let v of deleteList) {
+		delete temp[v]
+	}
+
+	const data3 = [{id: 'root', children: temp['root']}];
+	document.querySelector('#container').appendChild(createNode(data3));
+	drawLine(data3);
+
+</script>
+</body>
+</html>
